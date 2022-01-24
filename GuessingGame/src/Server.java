@@ -28,8 +28,10 @@ public class Server {
 
                         if (line.matches("GET\\s+.*")) {
                             // process the GET request
+                            System.out.println("get");
                         } else if (line.matches("POST\\s+.*")) {
                             // process the POST request
+                            System.out.println("post");
                         }
                     }
 
