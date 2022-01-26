@@ -7,13 +7,14 @@ import java.util.Objects;
 
 public class Server {
 
-    private final int port = 8989;
+    private final int port = 8988;
     private String startHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>%s</title></head>";
     private String startBody = "<body>%s<br>%s %d %s %d" ;
     private String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
             "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
     private String end = "</form> </body> </html>";
     private String curHTML;
+    private int headers;
 
     public static void main(String[] args) {
         new Server();
@@ -29,9 +30,10 @@ public class Server {
                 try (Socket socket = serverSocket.accept();
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-
                     String line;
-                    while (!Objects.equals(line = in.readLine(), "")) { // read
+                    headers = 0;
+                    while (!Objects.equals(line = in.readLine(), "")) { // read headers
+                        headers += 1;
                         System.out.println(" <<< " + line); // log
 
                         if (line.matches("GET\\s+.*")) {
@@ -42,12 +44,17 @@ public class Server {
                             // process the POST request
                         }
                     }
+
+                    System.out.println(in.readLine());
+
+
                     System.out.println("slut");
 
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     //out.write("HTTP RESPONSE"); // write
                     String response= "HTTP/1.1 200 OK\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nContent-Length: "+curHTML.length()+"\nConnection: close\nContent-Type: text/html\n\n";
                     response += curHTML;
+                    System.out.println(response);
                     out.write(response);
                     out.flush(); // flush
 
