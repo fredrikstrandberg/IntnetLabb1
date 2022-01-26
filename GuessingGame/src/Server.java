@@ -3,6 +3,7 @@
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Random;
 
@@ -22,12 +23,15 @@ public class Server {
     private boolean correctGuess = false;
     private boolean outOfBounds = false;
     private final int correctNumber;
+    private final HashMap<String, Integer> cookieMap = new HashMap<String, Integer>();
 
     public static void main(String[] args) {
         new Server();
     }
 
     public Server() {
+
+
 
         correctNumber = new Random().nextInt(lowerBound+upperBound)+lowerBound;
         System.out.println(correctNumber);
@@ -41,6 +45,10 @@ public class Server {
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
+                    //skapa kaka för sessionen
+                    int SessionID = new Random().nextInt(1000);
+                    String newCookie = "SessionID=" + SessionID;
+                    cookieMap.put(newCookie, SessionID);
 
                     String line;
                     boolean postVariable = false;
