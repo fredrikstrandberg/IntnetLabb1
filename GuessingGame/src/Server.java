@@ -4,6 +4,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.Objects;
+import java.util.Random;
 
 public class Server {
 
@@ -18,13 +19,16 @@ public class Server {
     private int upperBound = 100;
     private int numGuesses = 0;
     private boolean correctGuess = false;
-    private int correctNumber = 50;
+    private int correctNumber;
 
     public static void main(String[] args) {
         new Server();
     }
 
-    public Server() { 
+    public Server() {
+
+        correctNumber = new Random().nextInt(lowerBound+upperBound)+lowerBound;
+        System.out.println(correctNumber);
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
             System.out.println("Listening on port: " + this.port);
             createHTML();
@@ -54,13 +58,13 @@ public class Server {
                     }
                     if (postVaraible){
                         int gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
-                        if (gissadeTalet < correctNumber) {
+                        if (gissadeTalet < correctNumber && gissadeTalet > lowerBound) {
                             lowerBound = gissadeTalet;
                         }
-                        else if (gissadeTalet > correctNumber) {
+                        else if (gissadeTalet > correctNumber && gissadeTalet < upperBound) {
                             upperBound = gissadeTalet;
                         }
-                        else { //korrekt gissning
+                        else if (gissadeTalet == correctNumber){ //korrekt gissning
                             System.out.println("korrekt!");
                             correctGuess = true;
                         }
@@ -94,7 +98,7 @@ public class Server {
         //String body = String.format(startBody, "Nope, guess a number between", lowerBound, "and", upperBound, "You have made", numGuesses, "guesses");
         if (correctGuess) {
             //funkar inte än
-            //head = String.format(startBody, "Correct, the correct number was", correctNumber);
+            body = String.format(startBody, "Correct, the correct number was " + String.valueOf(correctNumber), "Guess a number between", lowerBound, "and", upperBound);
         }
         curHTML = head + body + startForm + end;
         writeHTML();
