@@ -10,7 +10,7 @@ public class Server {
 
     private final int port = 8989;
     private String startHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>%s</title></head>";
-    private String startBody = "<body>%s<br>%s %d %s %d" ;
+    private String startBody = "<body>%s<br>%s %d %s %d";
     private String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
             "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
     private String end = "</form> </body> </html>";
