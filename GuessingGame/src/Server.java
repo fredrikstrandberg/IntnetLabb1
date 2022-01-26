@@ -22,6 +22,7 @@ public class Server {
     private int numGuesses = 0;
     private boolean correctGuess = false;
     private boolean outOfBounds = false;
+    private Session curSession;
     //private final int correctNumber;
 
     public static void main(String[] args) {
@@ -48,11 +49,11 @@ public class Server {
 
                         System.out.println(" <<< " + line); // log
 
-                        if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock
+                        if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
                             System.out.println("GET");
                             Random rand = new Random();
-                            String newCookie = String.valueOf(rand.nextInt(1000));
-                            Session curSession = new Session();
+                            String newCookie = String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
+                            curSession = new Session();
                             cookieMap.put(newCookie, curSession);
                             System.out.println(curSession.getCorrectNumber());
                             // process the GET request
