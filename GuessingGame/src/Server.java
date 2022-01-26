@@ -14,6 +14,11 @@ public class Server {
             "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
     private String end = "</form> </body> </html>";
     private String curHTML;
+    private int lowerBound = 1;
+    private int upperBound = 100;
+    private int numGuesses = 0;
+    private boolean correctGuess = false;
+    private int correctNumber = 50;
 
     public static void main(String[] args) {
         new Server();
@@ -22,7 +27,7 @@ public class Server {
     public Server() { 
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
             System.out.println("Listening on port: " + this.port);
-            createFirstHTML();
+            createHTML();
 
             while (true) {
 
@@ -30,23 +35,43 @@ public class Server {
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
+                    boolean postVaraible = false;
                     String line;
                     while (!Objects.equals(line = in.readLine(), "")) { // read
+
                         System.out.println(" <<< " + line); // log
 
                         if (line.matches("GET\\s+.*")) {
                             System.out.println("hej");
                             // process the GET request
+                            postVaraible = false;
                         } else if (line.matches("POST\\s+.*")) {
                             System.out.println("post");
                             // process the POST request
+                            numGuesses++;
+                            postVaraible = true;
                         }
                     }
+                    if (postVaraible){
+                        int gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
+                        if (gissadeTalet < correctNumber) {
+                            lowerBound = gissadeTalet;
+                        }
+                        else if (gissadeTalet > correctNumber) {
+                            upperBound = gissadeTalet;
+                        }
+                        else { //korrekt gissning
+                            System.out.println("korrekt!");
+                            correctGuess = true;
+                        }
+                        updateHTML();
+                    }
+
                     System.out.println("slut");
 
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     //out.write("HTTP RESPONSE"); // write
-                    String response= "HTTP/1.1 200 OK\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nContent-Length: "+curHTML.length()+"\nConnection: close\nContent-Type: text/html\n\n";
+                    String response = "HTTP/1.1 200 OK\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nContent-Length: "+curHTML.length()+"\nConnection: close\nContent-Type: text/html\n\n";
                     response += curHTML;
                     out.write(response);
                     out.flush(); // flush
@@ -62,9 +87,22 @@ public class Server {
         }
     }
 
-    private void createFirstHTML() {
+    private void updateHTML() {
         String head = String.format(startHead, "Number guess game");
-        String body = String.format(startBody, "Welcome to the Number Guess Game.", "Guess a number between", 1, "and", 100);
+        String body = String.format(startBody, "Welcome to the Number Guess Game.", "Guess a number between", lowerBound, "and", upperBound);
+        //funkar inte än
+        //String body = String.format(startBody, "Nope, guess a number between", lowerBound, "and", upperBound, "You have made", numGuesses, "guesses");
+        if (correctGuess) {
+            //funkar inte än
+            //head = String.format(startBody, "Correct, the correct number was", correctNumber);
+        }
+        curHTML = head + body + startForm + end;
+        writeHTML();
+    }
+
+    private void createHTML() {
+        String head = String.format(startHead, "Number guess game");
+        String body = String.format(startBody, "Welcome to the Number Guess Game.", "Guess a number between", lowerBound, "and", upperBound);
         curHTML = head + body + startForm + end;
         writeHTML();
     }
