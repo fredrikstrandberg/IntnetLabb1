@@ -3,6 +3,7 @@
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Random;
 
@@ -21,7 +22,7 @@ public class Server {
     private int numGuesses = 0;
     private boolean correctGuess = false;
     private boolean outOfBounds = false;
-    private final int correctNumber;
+    //private final int correctNumber;
 
     public static void main(String[] args) {
         new Server();
@@ -29,8 +30,8 @@ public class Server {
 
     public Server() {
 
-        correctNumber = new Random().nextInt(lowerBound+upperBound)+lowerBound;
-        System.out.println(correctNumber);
+        HashMap<String, Session> cookieMap=new HashMap<String, Session>();   //nytt
+
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
             System.out.println("Listening on port: " + this.port);
             createHomePageHTML();
@@ -41,15 +42,19 @@ public class Server {
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
-
                     String line;
                     boolean postVariable = false;
                     while (!Objects.equals(line = in.readLine(), "")) { // read
 
                         System.out.println(" <<< " + line); // log
 
-                        if (line.matches("GET\\s+.*")) {
+                        if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock
                             System.out.println("GET");
+                            Random rand = new Random();
+                            String newCookie = String.valueOf(rand.nextInt(1000));
+                            Session curSession = new Session();
+                            cookieMap.put(newCookie, curSession);
+                            System.out.println(curSession.getCorrectNumber());
                             // process the GET request
                             //postVariable = false;
                         } else if (line.matches("POST\\s+.*")) {
@@ -68,7 +73,7 @@ public class Server {
                         }
                         else {
                             outOfBounds = false;
-                            if (gissadeTalet < correctNumber) {
+                            if (gissadeTalet < curSession.getCorrectNumber) {
                                 lowerBound = gissadeTalet;
                             }
                             else if (gissadeTalet > correctNumber) {
