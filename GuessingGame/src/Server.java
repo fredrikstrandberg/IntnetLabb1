@@ -13,8 +13,10 @@ public class Server {
     private String startHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Number guess game</title></head>";
     //private String gameHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Nope, guess a number between €</title></head>";
     private String startBody = "<body>%s<br>%s" ;
-    private String startForm = "<form name=\"guessform\" method=\"POST\" onsubmit=\"setTimeout(function(){window.location.reload();},10);\"> <input type=\"text\" name=\"gissadeTalet\"" +
-            "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
+//    private String startForm = "<form name=\"guessform\" method=\"POST\" onsubmit=\"setTimeout(function(){window.location.reload();},10);\"> <input type=\"text\" name=\"gissadeTalet\"" +
+//            "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
+    private String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
+        "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
     private String end = "</form> </body> </html>";
     private String curHTML;
     private int lowerBound = 1;
@@ -72,50 +74,38 @@ public class Server {
                         curSession = new Session(cookie);
                         cookieMap.put(cookie, curSession);
                         System.out.println(cookie);
-                    } else if (cookieMap.get(cookie) == null){
+                    }
+                    else if (cookieMap.get(cookie) == null){
                         curSession = new Session(cookie);
                         cookieMap.put(cookie, curSession);
                     }
+
                     curSession = cookieMap.get(cookie);
-                    if (postVariable) {
-                        int gissadeTalet;
-                        try {
-                             gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
-                        }
-                        catch (ArrayIndexOutOfBoundsException e){
-                             gissadeTalet = 1000;
-                        }
-
-                        //curSession = cookieMap.get(cookie);
-                        curSession.increaseGuesses();
-
-                        if (gissadeTalet < curSession.getLowerBound() || gissadeTalet > curSession.getUpperBound()) {
-                            curSession.setOutOfBounds(true);
-                        }
-                        else {
-                            curSession.setOutOfBounds(false);
-                            if (gissadeTalet < curSession.getCorrectNumber()) {
-                                curSession.setLowerBound(gissadeTalet);
-                            }
-                            else if (gissadeTalet > curSession.getCorrectNumber()) {
-                                curSession.setUpperBound(gissadeTalet);
-                            }
-                            else { //korrekt gissning
-                                System.out.println("korrekt!");
-                                curSession.setCorrectGuess();
-                            }
-                        }
-                    }
-                    updateHTML();
+                    String response;
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
-                    //out.write("HTTP RESPONSE"); // write
-                    String response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-                    //if (curSession.getCorrectGuess()){
-                        //response = "HTTP/1.1 200 OK\nSet-Cookie: 2r2f\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-                        //cookieMap.remove(curSession.getCookie());
-                    //}
+                    if (postVariable) {  //Hanterar post
+                        handlePostMethod(in);
+                        //updateHTML();
+                        response = "HTTP/1.1 200 OK\nLocation: /guess.html\n Content-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+                        if (curSession.getCorrectGuess()){
+                            //response = "HTTP/1.1 200 OK\nSet-Cookie: token=deleted\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
+                            cookieMap.remove(curSession.getCookie());
+                        }
 
-                    response += curHTML;
+                    }
+                    else { //GET
+                        handleGetMethod(in);
+
+                        response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
+                        //updateHTML();
+                        response += curHTML;
+                    }
+
+
+
+                    //out.write("HTTP RESPONSE"); // write
+                    //String response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
+                    System.out.println(response);
                     out.write(response);
                     out.flush(); // flush
 
@@ -128,6 +118,40 @@ public class Server {
             System.err.println(e.getMessage());
             System.err.println("Could not listen on port: " + this.port);
             System.exit(1);
+        }
+    }
+
+    private void handleGetMethod(BufferedReader in) {
+    }
+
+    private void handlePostMethod(BufferedReader in) {
+
+        int gissadeTalet;
+        try {
+            gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
+        }
+        catch (ArrayIndexOutOfBoundsException | IOException e){
+            gissadeTalet = 1000;
+        }
+
+        //curSession = cookieMap.get(cookie);
+        curSession.increaseGuesses();
+
+        if (gissadeTalet < curSession.getLowerBound() || gissadeTalet > curSession.getUpperBound()) {
+            curSession.setOutOfBounds(true);
+        }
+        else {
+            curSession.setOutOfBounds(false);
+            if (gissadeTalet < curSession.getCorrectNumber()) {
+                curSession.setLowerBound(gissadeTalet);
+            }
+            else if (gissadeTalet > curSession.getCorrectNumber()) {
+                curSession.setUpperBound(gissadeTalet);
+            }
+            else { //korrekt gissning
+                System.out.println("korrekt!");
+                curSession.setCorrectGuess();
+            }
         }
     }
 
