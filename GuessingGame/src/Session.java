@@ -5,6 +5,8 @@ public class Session {
     private int upperBound;
     private int numGuesses;
     private final int correctNumber;
+    private boolean correctGuess = false;
+    private boolean outOfBounds = false;
 
     public Session(){
         lowerBound = 1;
@@ -41,6 +43,21 @@ public class Session {
         return upperBound;
     }
 
+    public void setCorrectGuess() {
+        correctGuess = true;
+    }
+
+    public boolean getCorrectGuess(){
+        return correctGuess;
+    }
+
+    public void setOutOfBounds(boolean OB){
+        outOfBounds = OB;
+    }
+
+    public boolean getOutOfBounds(){
+        return outOfBounds;
+    }
 
 
 }
