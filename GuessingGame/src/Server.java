@@ -59,8 +59,8 @@ public class Server {
                         } else if (line.matches("POST\\s+.*")) {
                             System.out.println("POST");
                             // process the POST request
-
                             postVariable = true;
+
                         } else if (line.matches("Cookie:\\s+.*")){
                             cookie = line.split(" ")[1];
                             System.out.println("Found cookie: " + cookie);
@@ -80,19 +80,27 @@ public class Server {
                     curSession = cookieMap.get(cookie);
                     String response;
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
+                    System.out.println(postVariable);
                     if (postVariable) {  //Hanterar post
-                        handlePostMethod(in);
+                        int gissadeTalet;
+                        try {
+                            gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
+                        }
+                        catch (ArrayIndexOutOfBoundsException | IOException e){
+                            gissadeTalet = 1000;
+                        }
+                        handlePostMethod(gissadeTalet);
                         System.out.println("handling post");
                         //updateHTML();
-                        response = "HTTP/1.1 303 See Other\nLocation: /result \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+                        response = "HTTP/1.1 303 See Other\nLocation: https://localhost:8989 \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
                         if (curSession.getCorrectGuess()){
                             //response = "HTTP/1.1 200 OK\nSet-Cookie: token=deleted\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
                             cookieMap.remove(curSession.getCookie());
                         }
+                        updateHTML();
                     }
                     else { //GET
                         response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-                        updateHTML();
                         response += curHTML;
                     }
 
@@ -123,20 +131,12 @@ public class Server {
         return cookie;
     }
 
-    private void handlePostMethod(BufferedReader in) {
-
-        int gissadeTalet;
-        try {
-            gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
-        }
-        catch (ArrayIndexOutOfBoundsException | IOException e){
-            gissadeTalet = 1000;
-        }
+    private void handlePostMethod(int gissadeTalet) {
 
         //curSession = cookieMap.get(cookie);
         curSession.increaseGuesses();
 
-        if (gissadeTalet < curSession.getLowerBound() || gissadeTalet > curSession.getUpperBound()) {
+        if (gissadeTalet <= curSession.getLowerBound() || gissadeTalet >= curSession.getUpperBound()) {
             curSession.setOutOfBounds(true);
         }
         else {
@@ -194,4 +194,7 @@ public class Server {
             //catch any exceptions here
         }
     }
+
+
+
 }
