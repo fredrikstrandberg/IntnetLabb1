@@ -110,10 +110,10 @@ public class Server {
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     //out.write("HTTP RESPONSE"); // write
                     String response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-                    if (curSession.getCorrectGuess()){
-                        response = "HTTP/1.1 200 OK\nSet-Cookie: 2r2f\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-                        cookieMap.remove(curSession.getCookie());
-                    }
+                    //if (curSession.getCorrectGuess()){
+                        //response = "HTTP/1.1 200 OK\nSet-Cookie: 2r2f\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
+                        //cookieMap.remove(curSession.getCookie());
+                    //}
 
                     response += curHTML;
                     out.write(response);
