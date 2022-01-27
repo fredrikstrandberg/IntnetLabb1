@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Random;
 
+
 public class Server {
 
     private final int port = 8989;
@@ -29,11 +30,10 @@ public class Server {
 
     public Server() throws UnknownHostException {
 
-
-
         HashMap<String, Session> cookieMap=new HashMap<String, Session>();   //nytt
-        HashMap<String, String> cookieCop = new HashMap<String, String>();
+        HashMap<String, InetAddress> cookieCop = new HashMap<String, InetAddress>();
 
+        System.out.println(serverIP);
 
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
             System.out.println("Listening on port: " + this.port);
@@ -47,9 +47,11 @@ public class Server {
                     String cookie = "";
                     String line;
                     boolean postVariable = false;
-                    while (!Objects.equals(line = in.readLine(), "") && line!=null) { // read
+                    while (!Objects.equals(line = in.readLine(), "") && line != null) { // read
+
 
                         System.out.println(" <<< " + line); // log
+
                         if (line.startsWith("GET /favicon.ico")){
                             out.close();
                             in.close();
@@ -75,9 +77,8 @@ public class Server {
                     if (!cookie.matches("SESSION.*")){
                         System.out.println("creating new cookie!!!");
                         cookie = createNewCookie();
-                        String ip = getClientIP();
 
-                        cookieCop.put(cookie, ip);
+                        cookieCop.put(cookie, serverIP);
                         cookieMap.put(cookie, curSession);
 
                     }
@@ -92,17 +93,40 @@ public class Server {
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     if (postVariable) {  //Hanterar post
                         int gissadeTalet;
-                        try {
-                            gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
-                        }
-                        catch (ArrayIndexOutOfBoundsException | IOException e){
-                            gissadeTalet = 1000;
-                        }
+
+
+//                        for(int i=0; i<13; i++){
+//                            in.read();
+//                        }
+//                        StringBuilder numberString = new StringBuilder();
+//                        for(int i=0; i<2; i++){
+//                            int ascii = in.read();
+//                            if (ascii == -1){
+//                                break;
+//                            }
+//                            if (ascii >= 48 && ascii <= 57){
+//                                numberString.append(String.valueOf(Character.getNumericValue(ascii)));
+//                            }
+//
+//                        }
+//                        String number = numberString.toString();
+//                        System.out.println(number);
+//
+//                        if(number.equals("")){
+//                            gissadeTalet = 0;
+//                        }
+//                        else{
+//                            gissadeTalet = Integer.parseInt(number);
+//                        }
+
+
+
+
                         handlePostMethod(gissadeTalet);
                         System.out.println("handling post");
                         updateHTML();
                         //response = "HTTP/1.1 303 See Other\nLocation: /result \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
-                        response = "HTTP/1.1 303 See Other\nLocation: /running \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+                        response = "HTTP/1.1 303 See Other\nLocation: /running\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
 
                     }
                     else { //GET
