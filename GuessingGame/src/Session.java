@@ -7,8 +7,10 @@ public class Session {
     private final int correctNumber;
     private boolean correctGuess = false;
     private boolean outOfBounds = false;
+    private String SessionID;
 
-    public Session(){
+    public Session(String cookie){
+        SessionID = cookie;
         lowerBound = 1;
         upperBound = 100;
         numGuesses = 0;
@@ -57,6 +59,10 @@ public class Session {
 
     public boolean getOutOfBounds(){
         return outOfBounds;
+    }
+
+    public String getCookie(){
+        return SessionID;
     }
 
 
