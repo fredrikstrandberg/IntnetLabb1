@@ -43,6 +43,7 @@ public class Server {
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
+                    String cookie = null;
                     String line;
                     boolean postVariable = false;
                     while (!Objects.equals(line = in.readLine(), "")) { // read
@@ -51,45 +52,66 @@ public class Server {
 
                         if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
                             System.out.println("GET");
-                            Random rand = new Random();
-                            String newCookie = String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
-                            curSession = new Session();
-                            cookieMap.put(newCookie, curSession);
-                            System.out.println(curSession.getCorrectNumber());
+                            //System.out.println(curSession.getCorrectNumber());
                             // process the GET request
                             //postVariable = false;
                         } else if (line.matches("POST\\s+.*")) {
                             System.out.println("POST");
                             // process the POST request
-                            numGuesses++;
+
                             postVariable = true;
+                        } else if (line.matches("Cookie:\\s+.*")){
+                            cookie = line.split(" ")[1];
+                            System.out.println("cookie!!!" + cookie);
                         }
+
+
                     }
+                    //create new user
+                    if (cookie.equals(null)){
+                        System.out.println("creating new cookie!!!");
+                        Random rand = new Random();
+                        cookie = String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
+                        System.out.println("COOKIE" + cookie);
+                        curSession = new Session();
+                        cookieMap.put(cookie, curSession);
+                    }
+                    System.out.println(cookieMap.get(cookie));
+                    if (cookieMap.get(cookie) == null){
+                        curSession = new Session();
+                        cookieMap.put(cookie, curSession);
+                    }
+
                     if (postVariable) {
 
                         int gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
 
-                        if (gissadeTalet < lowerBound || gissadeTalet > upperBound) {
-                            outOfBounds = true;
+
+                        curSession = cookieMap.get(cookie);
+                        curSession.increaseGuesses();
+
+                        if (gissadeTalet < curSession.getLowerBound() || gissadeTalet > curSession.getUpperBound()) {
+                            curSession.setOutOfBounds(true);
                         }
                         else {
-                            outOfBounds = false;
-                            if (gissadeTalet < curSession.getCorrectNumber) {
-                                lowerBound = gissadeTalet;
+                            curSession.setOutOfBounds(false);
+                            if (gissadeTalet < curSession.getCorrectNumber()) {
+                                curSession.setLowerBound(gissadeTalet);
                             }
-                            else if (gissadeTalet > correctNumber) {
-                                upperBound = gissadeTalet;
+                            else if (gissadeTalet > curSession.getCorrectNumber()) {
+                                curSession.setUpperBound(gissadeTalet);
                             }
                             else { //korrekt gissning
                                 System.out.println("korrekt!");
-                                correctGuess = true;
+                                curSession.setCorrectGuess();
                             }
                         }
                         updateHTML();
                     }
+
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     //out.write("HTTP RESPONSE"); // write
-                    String response = "HTTP/1.1 200 OK\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
+                    String response = "HTTP/1.1 200 OK\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nSet-Cookie: "+cookie+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
                     response += curHTML;
                     out.write(response);
                     out.flush(); // flush
@@ -109,15 +131,15 @@ public class Server {
     private void updateHTML() {
 
         String body;
-        if (correctGuess) {
-            body = String.format(startBody,"Correct, the correct number was " + correctNumber + " and made it in " + numGuesses + " guesses!","<br><a href=\"localhost:"+port+"\"> New Game</a");
+        if (curSession.getCorrectGuess()) {
+            body = String.format(startBody,"Correct, the correct number was " + curSession.getCorrectNumber() + " and made it in " + curSession.getNumGuesses() + " guesses!","<br><a href=\"localhost:"+port+"\"> New Game</a");
             }
         else{
-            if (outOfBounds){
-                body = String.format(startBody, "Only numbers between " + lowerBound + " and " + upperBound, "");
+            if (curSession.getOutOfBounds()){
+                body = String.format(startBody, "Only numbers between " + curSession.getLowerBound() + " and " + curSession.getUpperBound(), "");
             }
             else {
-                body = String.format(startBody, "Nope, guess a number between " + lowerBound + " and " + upperBound, "You have made " + numGuesses + " guesses!");
+                body = String.format(startBody, "Nope, guess a number between " + curSession.getLowerBound() + " and " + curSession.getUpperBound(), "You have made " + curSession.getNumGuesses() + " guesses!");
             }
         }
 
@@ -126,7 +148,7 @@ public class Server {
     }
 
     private void createHomePageHTML() {
-        String body = String.format(startBody, "Welcome to the Number Guess Game.", "Guess a number between " + lowerBound+ " and " + upperBound);
+        String body = String.format(startBody, "Welcome to the Number Guess Game.", "Guess a number between " + lowerBound + " and " + upperBound);
         curHTML = startHead + body + startForm + end;
         writeHTML();
     }
