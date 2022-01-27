@@ -38,12 +38,11 @@ public class Server {
             createHomePageHTML();
 
             while (true) {
-
                 try (Socket socket = serverSocket.accept();
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
-                    String cookie = null;
+                    String cookie = "";
                     String line;
                     boolean postVariable = false;
                     while (!Objects.equals(line = in.readLine(), "")) { // read
@@ -68,26 +67,22 @@ public class Server {
 
                     }
                     //create new user
-                    if (cookie.equals(null)){
+                    if (!cookie.matches("SESSION.*")){
                         System.out.println("creating new cookie!!!");
                         Random rand = new Random();
-                        cookie = String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
-                        System.out.println("COOKIE" + cookie);
-                        curSession = new Session();
+                        cookie = "SESSION" + String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
+                        curSession = new Session(cookie);
+                        cookieMap.put(cookie, curSession);
+                    } else if (cookieMap.get(cookie) == null){
+                        curSession = new Session(cookie);
                         cookieMap.put(cookie, curSession);
                     }
-                    System.out.println(cookieMap.get(cookie));
-                    if (cookieMap.get(cookie) == null){
-                        curSession = new Session();
-                        cookieMap.put(cookie, curSession);
-                    }
-
+                    curSession = cookieMap.get(cookie);
                     if (postVariable) {
 
                         int gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
 
-
-                        curSession = cookieMap.get(cookie);
+                        //curSession = cookieMap.get(cookie);
                         curSession.increaseGuesses();
 
                         if (gissadeTalet < curSession.getLowerBound() || gissadeTalet > curSession.getUpperBound()) {
@@ -111,7 +106,9 @@ public class Server {
 
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     //out.write("HTTP RESPONSE"); // write
+
                     String response = "HTTP/1.1 200 OK\nDate: Mon, 15 Jan 2018 22:14:15 GMT\nSet-Cookie: "+cookie+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
+
                     response += curHTML;
                     out.write(response);
                     out.flush(); // flush
