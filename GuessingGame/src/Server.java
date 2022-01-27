@@ -47,6 +47,7 @@ public class Server {
                     String cookie = "";
                     String line;
                     boolean postVariable = false;
+
                     while (!Objects.equals(line = in.readLine(), "") && line!=null) { // read
 
                         System.out.println(" <<< " + line); // log
