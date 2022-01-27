@@ -69,11 +69,8 @@ public class Server {
                     //create new user
                     if (!cookie.matches("SESSION.*")){
                         System.out.println("creating new cookie!!!");
-                        Random rand = new Random();
-                        cookie = "SESSION" + String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
-                        curSession = new Session(cookie);
+                        cookie = createNewCookie();
                         cookieMap.put(cookie, curSession);
-                        System.out.println(cookie);
                     }
                     else if (cookieMap.get(cookie) == null){
                         curSession = new Session(cookie);
@@ -85,25 +82,22 @@ public class Server {
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     if (postVariable) {  //Hanterar post
                         handlePostMethod(in);
+                        System.out.println("handling post");
                         //updateHTML();
-                        response = "HTTP/1.1 200 OK\nLocation: /guess.html\n Content-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+                        response = "HTTP/1.1 303 See Other\nLocation: /result \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
                         if (curSession.getCorrectGuess()){
                             //response = "HTTP/1.1 200 OK\nSet-Cookie: token=deleted\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
                             cookieMap.remove(curSession.getCookie());
                         }
-
                     }
                     else { //GET
-                        handleGetMethod(in);
-
                         response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-                        //updateHTML();
+                        updateHTML();
                         response += curHTML;
                     }
 
 
-
-                    //out.write("HTTP RESPONSE"); // write
+                    out.write("HTTP RESPONSE"); // write
                     //String response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
                     System.out.println(response);
                     out.write(response);
@@ -121,7 +115,12 @@ public class Server {
         }
     }
 
-    private void handleGetMethod(BufferedReader in) {
+    private String createNewCookie() {
+        Random rand = new Random();
+        String cookie = "SESSION" + String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
+        curSession = new Session(cookie);
+        System.out.println(cookie);
+        return cookie;
     }
 
     private void handlePostMethod(BufferedReader in) {
