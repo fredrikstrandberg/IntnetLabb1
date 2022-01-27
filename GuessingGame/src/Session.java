@@ -7,7 +7,7 @@ public class Session {
     private final int correctNumber;
     private boolean correctGuess = false;
     private boolean outOfBounds = false;
-    private String SessionID;
+    private final String SessionID;
 
     public Session(String cookie){
         SessionID = cookie;
