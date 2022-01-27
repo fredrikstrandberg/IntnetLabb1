@@ -21,6 +21,7 @@ public class Server {
     private String curHTML;
     private Session curSession;
     //private final int correctNumber;
+    private final InetAddress serverIP = InetAddress.getLocalHost();
 
     public static void main(String[] args) throws UnknownHostException {
         new Server();
@@ -28,8 +29,7 @@ public class Server {
 
     public Server() throws UnknownHostException {
 
-        InetAddress serverIP = InetAddress.getLocalHost();
-        System.out.println(serverIP);
+
 
         HashMap<String, Session> cookieMap=new HashMap<String, Session>();   //nytt
         HashMap<String, String> cookieCop = new HashMap<String, String>();
@@ -56,8 +56,7 @@ public class Server {
                             continue;
                         }
 
-
-                        else if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
+                        if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
                             System.out.println("GET");
                             //System.out.println(curSession.getCorrectNumber());
                             // process the GET request
