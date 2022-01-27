@@ -13,17 +13,12 @@ public class Server {
     private String startHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Number guess game</title></head>";
     //private String gameHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Nope, guess a number between €</title></head>";
     private String startBody = "<body>%s<br>%s" ;
-//    private String startForm = "<form name=\"guessform\" method=\"POST\" onsubmit=\"setTimeout(function(){window.location.reload();},10);\"> <input type=\"text\" name=\"gissadeTalet\"" +
-//            "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
-    private String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
-        "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
+    private String startForm = "<form name=\"guessform\" method=\"POST\" onsubmit=\"setTimeout(function(){window.location.reload();},10);\"> <input type=\"text\" name=\"gissadeTalet\"" +
+            "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
+//    private String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
+//        "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
     private String end = "</form> </body> </html>";
     private String curHTML;
-    private int lowerBound = 1;
-    private int upperBound = 100;
-    private int numGuesses = 0;
-    private boolean correctGuess = false;
-    private boolean outOfBounds = false;
     private Session curSession;
     //private final int correctNumber;
 
@@ -34,6 +29,8 @@ public class Server {
     public Server() {
 
         HashMap<String, Session> cookieMap=new HashMap<String, Session>();   //nytt
+        HashMap<String, String> cookieCop = new HashMap<String, String>();
+
 
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
             System.out.println("Listening on port: " + this.port);
@@ -43,6 +40,8 @@ public class Server {
                 try (Socket socket = serverSocket.accept();
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+
+
 
                     String cookie = "";
                     String line;
@@ -59,8 +58,8 @@ public class Server {
                         } else if (line.matches("POST\\s+.*")) {
                             System.out.println("POST");
                             // process the POST request
-                            postVariable = true;
 
+                            postVariable = true;
                         } else if (line.matches("Cookie:\\s+.*")){
                             cookie = line.split(" ")[1];
                             System.out.println("Found cookie: " + cookie);
@@ -70,17 +69,21 @@ public class Server {
                     if (!cookie.matches("SESSION.*")){
                         System.out.println("creating new cookie!!!");
                         cookie = createNewCookie();
+                        String ip = getClientIP();
+
+                        cookieCop.put(cookie, ip);
                         cookieMap.put(cookie, curSession);
+
                     }
-                    else if (cookieMap.get(cookie) == null){
-                        curSession = new Session(cookie);
-                        cookieMap.put(cookie, curSession);
-                    }
+//                    else if (cookieMap.get(cookie) == null){   ///om webbbrowsern kommer ihåg sin gamla cookie, men vi vill starta ett nytt spel
+//                        curSession = new Session(cookie);
+//                        cookieMap.put(cookie, curSession);
+//                        System.out.println("cookie utan session");
+//                    }
 
                     curSession = cookieMap.get(cookie);
                     String response;
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
-                    System.out.println(postVariable);
                     if (postVariable) {  //Hanterar post
                         int gissadeTalet;
                         try {
@@ -91,21 +94,25 @@ public class Server {
                         }
                         handlePostMethod(gissadeTalet);
                         System.out.println("handling post");
-                        //updateHTML();
-                        response = "HTTP/1.1 303 See Other\nLocation: https://localhost:8989 \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+                        updateHTML();
+                        //response = "HTTP/1.1 303 See Other\nLocation: /result \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+                        response = "HTTP/1.1 200 \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+
+                    }
+                    else { //GET
+                        cookie = curSession.getCookie();
+
+                        response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
+                        updateHTML();
+                        response += curHTML;
                         if (curSession.getCorrectGuess()){
                             //response = "HTTP/1.1 200 OK\nSet-Cookie: token=deleted\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
                             cookieMap.remove(curSession.getCookie());
                         }
-                        updateHTML();
-                    }
-                    else { //GET
-                        response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-                        response += curHTML;
                     }
 
 
-                    out.write("HTTP RESPONSE"); // write
+                    //out.write("HTTP RESPONSE"); // write
                     //String response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
                     System.out.println(response);
                     out.write(response);
@@ -123,6 +130,10 @@ public class Server {
         }
     }
 
+    private String getClientIP() {
+        return String.valueOf(new Random().nextInt(1000)+1000); //hittar på IP-address
+    }
+
     private String createNewCookie() {
         Random rand = new Random();
         String cookie = "SESSION" + String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
@@ -133,13 +144,11 @@ public class Server {
 
     private void handlePostMethod(int gissadeTalet) {
 
-        //curSession = cookieMap.get(cookie);
-        curSession.increaseGuesses();
-
         if (gissadeTalet <= curSession.getLowerBound() || gissadeTalet >= curSession.getUpperBound()) {
             curSession.setOutOfBounds(true);
         }
         else {
+            curSession.increaseGuesses();
             curSession.setOutOfBounds(false);
             if (gissadeTalet < curSession.getCorrectNumber()) {
                 curSession.setLowerBound(gissadeTalet);
@@ -158,25 +167,28 @@ public class Server {
 
         String endBody;
         String body;
-        if (curSession.getCorrectGuess()) {
-            endBody = String.format(startBody,"Correct, the correct number was " + curSession.getCorrectNumber() + " and made it in " + curSession.getNumGuesses() + "<br>", "");
-            String endForm = "<form name=\"EndForm\" method=\"GET\"><input type=\"submit\" value=\"New Game\">";
-            curHTML = startHead + endBody + endForm + end;
+        if (curSession.getNumGuesses() == 0){
+            createHomePageHTML();
         }
-        else{
-            if (curSession.getOutOfBounds()){
-                body = String.format(startBody, "Only numbers between " + curSession.getLowerBound() + " and " + curSession.getUpperBound(), "");
+        else {
+            if (curSession.getCorrectGuess()) {
+                endBody = String.format(startBody, "Correct, the correct number was " + curSession.getCorrectNumber() + " and made it in " + curSession.getNumGuesses() + "<br>", "");
+                String endForm = "<form name=\"EndForm\" method=\"GET\"><input type=\"submit\" value=\"New Game\">";
+                curHTML = startHead + endBody + endForm + end;
+            } else {
+                if (curSession.getOutOfBounds()) {
+                    body = String.format(startBody, "Only numbers between " + curSession.getLowerBound() + " and " + curSession.getUpperBound(), "");
+                } else {
+                    body = String.format(startBody, "Nope, guess a number between " + curSession.getLowerBound() + " and " + curSession.getUpperBound(), "You have made " + curSession.getNumGuesses() + " guesses!");
+                }
+                curHTML = startHead + body + startForm + end;
             }
-            else {
-                body = String.format(startBody, "Nope, guess a number between " + curSession.getLowerBound() + " and " + curSession.getUpperBound(), "You have made " + curSession.getNumGuesses() + " guesses!");
-            }
-            curHTML = startHead + body + startForm + end;
         }
         writeHTML();
     }
 
     private void createHomePageHTML() {
-        String body = String.format(startBody, "Welcome to the Number Guess Game.", "Guess a number between " + lowerBound + " and " + upperBound);
+        String body = String.format(startBody, "Welcome to the Number Guess Game.", "Guess a number between 1 and 100");
         curHTML = startHead + body + startForm + end;
         writeHTML();
     }
@@ -194,7 +206,4 @@ public class Server {
             //catch any exceptions here
         }
     }
-
-
-
 }
