@@ -13,10 +13,10 @@ public class Server {
     private String startHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Number guess game</title></head>";
     //private String gameHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Nope, guess a number between €</title></head>";
     private String startBody = "<body>%s<br>%s" ;
-    private String startForm = "<form name=\"guessform\" method=\"POST\" onsubmit=\"setTimeout(function(){window.location.reload();},10);\"> <input type=\"text\" name=\"gissadeTalet\"" +
-            "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
-//    private String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
-//        "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
+//    private String startForm = "<form name=\"guessform\" method=\"POST\" onsubmit=\"setTimeout(function(){window.location.reload();},10);\"> <input type=\"text\" name=\"gissadeTalet\"" +
+//            "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
+    private String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
+        "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
     private String end = "</form> </body> </html>";
     private String curHTML;
     private Session curSession;
@@ -50,8 +50,14 @@ public class Server {
                     while (!Objects.equals(line = in.readLine(), "") && line!=null) { // read
 
                         System.out.println(" <<< " + line); // log
+                        if (line.startsWith("GET /favicon.ico")){
+                            out.close();
+                            in.close();
+                            continue;
+                        }
 
-                        if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
+
+                        else if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
                             System.out.println("GET");
                             //System.out.println(curSession.getCorrectNumber());
                             // process the GET request
@@ -97,7 +103,7 @@ public class Server {
                         System.out.println("handling post");
                         updateHTML();
                         //response = "HTTP/1.1 303 See Other\nLocation: /result \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
-                        response = "HTTP/1.1 200 \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+                        response = "HTTP/1.1 303 See Other\nLocation: /running \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
 
                     }
                     else { //GET
