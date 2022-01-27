@@ -22,11 +22,14 @@ public class Server {
     private Session curSession;
     //private final int correctNumber;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
         new Server();
     }
 
-    public Server() {
+    public Server() throws UnknownHostException {
+
+        InetAddress serverIP = InetAddress.getLocalHost();
+        System.out.println(serverIP);
 
         HashMap<String, Session> cookieMap=new HashMap<String, Session>();   //nytt
         HashMap<String, String> cookieCop = new HashMap<String, String>();
@@ -40,8 +43,6 @@ public class Server {
                 try (Socket socket = serverSocket.accept();
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-
-
 
                     String cookie = "";
                     String line;
