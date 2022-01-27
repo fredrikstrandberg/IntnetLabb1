@@ -32,7 +32,7 @@ public class Server {
 
 
         HashMap<String, Session> cookieMap=new HashMap<String, Session>();   //nytt
-        HashMap<String, String> cookieCop = new HashMap<String, String>();
+        HashMap<String, InetAddress> cookieCop = new HashMap<String, InetAddress>();
 
 
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
@@ -44,40 +44,46 @@ public class Server {
                      BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                      BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
+                    String headers = "";
                     String cookie = "";
-                    String line;
+                    String line = in.readLine();
                     boolean postVariable = false;
-                    while (!Objects.equals(line = in.readLine(), "") && line!=null) { // read
+                    //while (!Objects.equals(line = in.readLine(), "") && line!=null) { // read
+                    try {
+                        while (!Objects.equals(line, "")) {
+                            System.out.println(" <<< " + line); // log
+                            if (line.startsWith("GET /favicon.ico")) {
+                                out.close();
+                                in.close();
+                                continue;
+                            }
 
-                        System.out.println(" <<< " + line); // log
-                        if (line.startsWith("GET /favicon.ico")){
-                            out.close();
-                            in.close();
-                            continue;
+                            if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
+                                System.out.println("GET");
+                                //System.out.println(curSession.getCorrectNumber());
+                                // process the GET request
+                                //postVariable = false;
+                            } else if (line.matches("POST\\s+.*")) {
+                                System.out.println("POST");
+                                // process the POST request
+
+                                postVariable = true;
+                            } else if (line.matches("Cookie:\\s+.*")) {
+                                cookie = line.split(" ")[1];
+                                System.out.println("Found cookie: " + cookie);
+                            }
+                            line = in.readLine();
                         }
-
-                        if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
-                            System.out.println("GET");
-                            //System.out.println(curSession.getCorrectNumber());
-                            // process the GET request
-                            //postVariable = false;
-                        } else if (line.matches("POST\\s+.*")) {
-                            System.out.println("POST");
-                            // process the POST request
-
-                            postVariable = true;
-                        } else if (line.matches("Cookie:\\s+.*")){
-                            cookie = line.split(" ")[1];
-                            System.out.println("Found cookie: " + cookie);
-                        }
-                    }
-                    //create new user
+                    } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                //create new user
                     if (!cookie.matches("SESSION.*")){
                         System.out.println("creating new cookie!!!");
                         cookie = createNewCookie();
-                        String ip = getClientIP();
+                        //String ip = getClientIP();
 
-                        cookieCop.put(cookie, ip);
+                        //cookieCop.put(cookie, ip);
                         cookieMap.put(cookie, curSession);
 
                     }
@@ -92,12 +98,21 @@ public class Server {
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     if (postVariable) {  //Hanterar post
                         int gissadeTalet;
-                        try {
-                            gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
-                        }
-                        catch (ArrayIndexOutOfBoundsException | IOException e){
-                            gissadeTalet = 1000;
-                        }
+//                        try {
+//                            gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
+//                        }
+//                        catch (ArrayIndexOutOfBoundsException | IOException e){
+//                            gissadeTalet = 1000;
+                        //}
+                        for ()
+                        System.out.println(in.read());
+                        System.out.println(in.read());
+
+
+
+
+                        gissadeTalet = Integer.parseInt(in.readLine().split("=")[1]);
+                        System.out.println(gissadeTalet);
                         handlePostMethod(gissadeTalet);
                         System.out.println("handling post");
                         updateHTML();
