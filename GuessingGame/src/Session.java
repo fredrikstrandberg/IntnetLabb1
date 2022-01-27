@@ -14,7 +14,7 @@ public class Session {
         lowerBound = 1;
         upperBound = 100;
         numGuesses = 0;
-        correctNumber = new Random().nextInt(lowerBound+upperBound)+lowerBound;
+        correctNumber = new Random().nextInt(upperBound-(1+lowerBound))+lowerBound+1;  //random 2 to 99
     }
 
     public void increaseGuesses(){
