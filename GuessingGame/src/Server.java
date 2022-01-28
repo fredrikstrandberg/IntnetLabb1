@@ -8,18 +8,12 @@ import java.util.Random;
 
 public class Server {
 
-    private final int port = 8989;
-    private String startHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Number guess game</title></head>";
-    //private String gameHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Nope, guess a number between €</title></head>";
-    private String startBody = "<body>%s<br>%s" ;
-//    private String startForm = "<form name=\"guessform\" method=\"POST\" onsubmit=\"setTimeout(function(){window.location.reload();},10);\"> <input type=\"text\" name=\"gissadeTalet\"" +
-//            "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
-    private String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
+    private final String startHead = "<!DOCTYPE html> <html lang=\"En\"><head><meta charset=\"UTF-8\"><title>Number guess game</title></head>";
+    private final String startBody = "<body>%s<br>%s" ;
+    private final String startForm = "<form name=\"guessform\" method=\"POST\"> <input type=\"text\" name=\"gissadeTalet\"" +
         "autofocus=\"\"><input type=\"submit\" value=\"Guess\">";
-    private String end = "</form> </body> </html>";
     private String curHTML;
     private Session curSession;
-    //private final int correctNumber;
 
     public static void main(String[] args) {
         new Server();
@@ -31,8 +25,9 @@ public class Server {
         HashMap<String, String> cookieCop = new HashMap<String, String>();
 
 
-        try (ServerSocket serverSocket = new ServerSocket(this.port)) {
-            System.out.println("Listening on port: " + this.port);
+        int port = 8989;
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Listening on port: " + port);
             createHomePageHTML();
 
             while (true) {
@@ -45,31 +40,28 @@ public class Server {
                     String cookie = "";
                     String contentLength = "";
                     String line;
-                    String getHeader = "";
-                    boolean postVariable = false;
+                    String response;
+                    String getHeader = "";  //vill spara första raden i get header då den kan innehålla olika urls
+                    boolean postVariable = false;  //initierar till false
 
                     while (!Objects.equals(line = in.readLine(), "") && line!=null) { // read
 
                         System.out.println(" <<< " + line); // log
-                        if (line.startsWith("GET /favicon.ico")){
+                        if (line.startsWith("GET /favicon.ico")){  //buggig get-request som vi inte vill använda
                             out.close();
                             in.close();
-                            continue;
                         }
 
 
-                        else if (line.matches("GET\\s+.*")) {  //försökt få till detta, funkar inte just nu dock.
+                        else if (line.matches("GET\\s+.*")) {  //Om get request.
                             System.out.println("GET");
                             getHeader = line;
-                            //System.out.println(curSession.getCorrectNumber());
-                            // process the GET request
-                            //postVariable = false;
+
                         } else if (line.matches("POST\\s+.*")) {
                             System.out.println("POST");
-                            // process the POST request
+                            postVariable = true;   //sätter post till true för att hantera den senare
 
-                            postVariable = true;
-                        } else if (line.matches("Cookie:\\s+.*")){
+                        } else if (line.matches("Cookie:\\s+.*")){   //
                             cookie = line.split(" ")[1];
                             System.out.println("Found cookie: " + cookie);
 
@@ -79,57 +71,47 @@ public class Server {
                     }
                     }
                     //create new user
-                    if (!cookie.matches("SESSION.*")){
-                        System.out.println("creating new cookie!!!");
-                        cookie = createNewCookie();
+                    if (!cookie.matches("SESSION.*")){  //om vi coookien inte finns, dvs ny användare
+
+                        cookie = createNewCookie();  //skapar en ny cookie
+                        curSession = new Session(cookie);  //skapar en ny session med skapad cookie
                         String ip = getClientIP();
 
                         cookieCop.put(cookie, ip);
-                        cookieMap.put(cookie, curSession);
+                        cookieMap.put(cookie, curSession);  //kopplar cookie till session
 
                     }
-//                    else if (cookieMap.get(cookie) == null){   ///om webbbrowsern kommer ihåg sin gamla cookie, men vi vill starta ett nytt spel
-//                        curSession = new Session(cookie);
-//                        cookieMap.put(cookie, curSession);
-//                        System.out.println("cookie utan session");
-//                    }
 
-
-                    curSession = cookieMap.get(cookie);
-                    String response;
+                    curSession = cookieMap.get(cookie);  //curSession är den sessionen kopplad till en cookie
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     if (postVariable) {  //Hanterar post
 
                         String payload = readPayload(in, Integer.parseInt(contentLength));
-
                         int gissadeTalet;
                         try {
                             gissadeTalet = Integer.parseInt(payload.split("=")[1]);
                         }
-                        catch (ArrayIndexOutOfBoundsException e){
+                        catch (ArrayIndexOutOfBoundsException | NumberFormatException e){  //om ogiltig inmatning sätter vi gissadeTalet till 1000 för att få felet "out of bounds".
                             gissadeTalet = 1000;
                         }
 
-                        handlePostMethod(gissadeTalet);
-                        System.out.println("handling post");
-                        updateHTML();
-                        //response = "HTTP/1.1 303 See Other\nLocation: /result \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
-                        response = "HTTP/1.1 303 See Other\nLocation: /running \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
-                        if (curSession.getCorrectGuess()){
-                            response = "HTTP/1.1 303 See Other\nLocation: /endpage" + curSession.getNumGuesses() + "\nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
-                            cookieMap.remove(curSession.getCookie());
-                        }
+                        handlePostMethod(gissadeTalet);  //uppdaterar sessionens paramterar beronde på gissade talet
+                        updateHTML();  //uppdatarar nuvarande html för för nästa get-request
 
+                        response = "HTTP/1.1 303 See Other\nLocation: /running \nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+
+                        if (curSession.getCorrectGuess()){  //om vi har gissat rätt blir det annan response!
+                            response = "HTTP/1.1 303 See Other\nLocation: /endpage" + curSession.getNumGuesses() + "\nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
+                            cookieMap.remove(curSession.getCookie()); //tar bort cookien från mappen
+                        }
                     }
-                    else { //GET
-                        //cookie = curSession.getCookie();
-                        if (getHeader.contains("/endpage")){
+                    else { //hanterar en get-request
+
+                        if (getHeader.contains("/endpage")){  //om vi klarat spelet eller uppdaterar sidan på slutsidan
                             String numGuesses = getHeader.split(" ")[1].substring(8,9);
                             String endBody = String.format(startBody, "Correct, the correct number was guessed in " + numGuesses + " guesses." + "<br>", "<a href=\"http://localhost:8989\"> New game</a>");
                             curHTML = startHead + endBody + "</body></html>";
-
                             response = "HTTP/1.1 200 OK\nSet-Cookie: ickeFungerandeCookie\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-
                             response += curHTML;
                         }
                         else{
@@ -137,17 +119,8 @@ public class Server {
                             response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
                             response += curHTML;
                         }
-
-
-                            //"HTTP/1.1 303 See Other\nContent-Length: 0 \nConnection: close\nContent-Type: text/html\n\n";
-                            //response = "HTTP/1.1 200 OK\nSet-Cookie: token=deleted\nLocation: /endpage \nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
-                            //cookieMap.remove(curSession.getCookie());
-
                     }
 
-
-                    //out.write("HTTP RESPONSE"); // write
-                    //String response = "HTTP/1.1 200 OK\nSet-Cookie: "+curSession.getCookie()+"\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
                     System.out.println(response);
                     out.write(response);
                     out.flush(); // flush
@@ -159,31 +132,32 @@ public class Server {
         }
         catch (IOException e) {
             System.err.println(e.getMessage());
-            System.err.println("Could not listen on port: " + this.port);
+            System.err.println("Could not listen on port: " + port);
             System.exit(1);
         }
     }
 
     public static String readPayload(BufferedReader scktIn, int contentLength)throws IOException{
         char[] cbuf=new char[contentLength];
-        scktIn.read(cbuf, 0, contentLength);
+        scktIn.read(cbuf, 0, contentLength);  //läser in payload
         return new String(cbuf);
     }
-
 
     private String getClientIP() {
         return String.valueOf(new Random().nextInt(1000)+1000); //hittar på IP-address
     }
 
     private String createNewCookie() {
+        System.out.println("creating new cookie!!!");
+
         Random rand = new Random();
-        String cookie = "SESSION" + String.valueOf(rand.nextInt(1000));  //tänker en cookie som enbart är ett nummer
-        curSession = new Session(cookie);
+        String cookie = "SESSION" + String.valueOf(rand.nextInt(1000));  //ny cookie
         System.out.println(cookie);
         return cookie;
     }
 
     private void handlePostMethod(int gissadeTalet) {
+        System.out.println("handling post");
 
         if (gissadeTalet <= curSession.getLowerBound() || gissadeTalet >= curSession.getUpperBound()) {
             curSession.setOutOfBounds(true);
@@ -229,21 +203,22 @@ public class Server {
 
     private void createHomePageHTML() {
         String body = String.format(startBody, "Welcome to the Number Guess Game.", "Guess a number between 1 and 100");
+        String end = "</form> </body> </html>";
         curHTML = startHead + body + startForm + end;
         writeHTML();
     }
 
-    private void writeHTML() {
+    private void writeHTML() {  //skriver htlm till files guess.html
         FileWriter fWriter;
         BufferedWriter writer;
         try {
             fWriter = new FileWriter("GuessingGame/src/guess.html");
             writer = new BufferedWriter(fWriter);
             writer.write(curHTML);
-            writer.newLine(); //this is not actually needed for html files - can make your code more readable though
-            writer.close(); //make sure you close the writer object
+            writer.newLine();
+            writer.close();
         } catch (Exception e) {
-            //catch any exceptions here
+            System.err.println(e.getMessage());
         }
     }
 }
