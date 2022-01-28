@@ -79,7 +79,6 @@ public class Server {
 
                         cookieCop.put(cookie, ip);
                         cookieMap.put(cookie, curSession);  //kopplar cookie till session
-
                     }
 
                     curSession = cookieMap.get(cookie);  //curSession är den sessionen kopplad till en cookie
@@ -108,7 +107,7 @@ public class Server {
                     else { //hanterar en get-request
 
                         if (getHeader.contains("/endpage")){  //om vi klarat spelet eller uppdaterar sidan på slutsidan
-                            String numGuesses = getHeader.split(" ")[1].substring(8,9);
+                            String numGuesses = getHeader.split(" ")[1].substring(8);
                             String endBody = String.format(startBody, "Correct, the correct number was guessed in " + numGuesses + " guesses." + "<br>", "<a href=\"http://localhost:8989\"> New game</a>");
                             curHTML = startHead + endBody + "</body></html>";
                             response = "HTTP/1.1 200 OK\nSet-Cookie: ickeFungerandeCookie\nContent-Length: " + curHTML.length() + "\nConnection: close\nContent-Type: text/html\n\n";
