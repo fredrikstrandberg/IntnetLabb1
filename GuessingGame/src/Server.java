@@ -20,15 +20,20 @@ public class Server {
     private String curHTML;
     private Session curSession;
     //private final int correctNumber;
+    private InetAddress serverIP = InetAddress.getLocalHost();
+    HashMap<String, InetAddress> cookieCop;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
         new Server();
     }
 
-    public Server() {
+    public Server() throws UnknownHostException {
 
-        HashMap<String, Session> cookieMap=new HashMap<String, Session>();   //nytt
-        HashMap<String, String> cookieCop = new HashMap<String, String>();
+
+        HashMap<String, Session> cookieMap = new HashMap<String, Session>();   //nytt
+        cookieCop = new HashMap<String, InetAddress>();
+
+        System.out.println(serverIP);
 
 
         try (ServerSocket serverSocket = new ServerSocket(this.port)) {
@@ -82,9 +87,8 @@ public class Server {
                     if (!cookie.matches("SESSION.*")){
                         System.out.println("creating new cookie!!!");
                         cookie = createNewCookie();
-                        String ip = getClientIP();
 
-                        cookieCop.put(cookie, ip);
+                        cookieCop.put(cookie, serverIP);
                         cookieMap.put(cookie, curSession);
 
                     }
@@ -99,6 +103,10 @@ public class Server {
                     String response;
                     System.out.println(" >>> " + "HTTP RESPONSE"); // log
                     if (postVariable) {  //Hanterar post
+
+                        if (!cookieCopChecker()){
+                            in.close();
+                        }
 
                         String payload = readPayload(in, Integer.parseInt(contentLength));
 
@@ -123,6 +131,9 @@ public class Server {
                     }
                     else { //GET
                         //cookie = curSession.getCookie();
+                        if (!cookieCopChecker()){
+                            in.close();
+                        }
                         if (getHeader.contains("/endpage")){
                             String numGuesses = getHeader.split(" ")[1].substring(8,9);
                             String endBody = String.format(startBody, "Correct, the correct number was guessed in " + numGuesses + " guesses." + "<br>", "<a href=\"http://localhost:8989\"> New game</a>");
@@ -162,6 +173,15 @@ public class Server {
             System.err.println("Could not listen on port: " + this.port);
             System.exit(1);
         }
+    }
+
+    private boolean cookieCopChecker() {
+        String cookie = curSession.getCookie();
+        if(cookieCop.get(cookie) == serverIP){
+            return true;
+        }
+        return false;
+
     }
 
     public static String readPayload(BufferedReader scktIn, int contentLength)throws IOException{
